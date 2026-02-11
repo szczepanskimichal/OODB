@@ -1,0 +1,6 @@
+@OODB_HostAddress = http://localhost:5150
+
+GET {{OODB_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
