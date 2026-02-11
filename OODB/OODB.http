@@ -1,6 +1,79 @@
-@OODB_HostAddress = http://localhost:5150
+@baseUrl = http://localhost:5150
+# Alternativ hvis https:
+# @baseUrl = https://localhost:7096
 
-GET {{OODB_HostAddress}}/weatherforecast/
+
+### ----------------------------------------
+### DEBUG – sjekk DB-path og antall events
+### ----------------------------------------
+GET {{baseUrl}}/debug/db
 Accept: application/json
 
-###
+
+### ----------------------------------------
+### POST /events – student_registrert
+### (uten studentId – backend genererer)
+### ----------------------------------------
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "00000000-0000-0000-0000-000000000003",
+  "occurredUtc": "2025-02-01T09:00:00Z",
+  "recordedUtc": "2025-02-01T09:00:05Z",
+  "type": "student_registrert",
+  "name": "Michal Szczepanski",
+  "birthdate": "1986-08-15",
+  "city": "Fall",
+  "payloadJson": "{}"
+}
+
+
+### ----------------------------------------
+### POST /events – kurs-event (MED studentId)
+### (kopier studentId fra forrige respons)
+### ----------------------------------------
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "00000000-0000-0000-0000-000000000002",
+  "occurredUtc": "2025-02-02T10:00:00Z",
+  "recordedUtc": "2025-02-02T10:00:03Z",
+  "type": "søkt",
+  "studentId": "PUT-STUDENT-ID-HERE",
+  "course": "StartIT",
+  "year": 2025,
+  "semester": 1,
+  "payloadJson": "{\"motivasjon\":\"Jeg ønsker å lære mer om IT!\"}"
+}
+
+
+### ----------------------------------------
+### POST /events – duplikat eventId
+### (skal ignoreres – idempotens)
+### ----------------------------------------
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "00000000-0000-0000-0000-000000000002",
+  "occurredUtc": "2025-02-02T10:00:00Z",
+  "recordedUtc": "2025-02-02T10:00:03Z",
+  "type": "søkt",
+  "studentId": "PUT-STUDENT-ID-HERE",
+  "course": "StartIT",
+  "year": 2025,
+  "semester": 1,
+  "payloadJson": "{\"motivasjon\":\"Jeg ønsker å lære mer om IT!\"}"
+}
+
+
+### ----------------------------------------
+### GET /events – rå event-logg (append-only)
+### ----------------------------------------
+GET {{baseUrl}}/events
+Accept: application/json
