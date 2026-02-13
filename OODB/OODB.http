@@ -3,77 +3,119 @@
 # @baseUrl = https://localhost:7096
 
 
-### ----------------------------------------
-### DEBUG – sjekk DB-path og antall events
-### ----------------------------------------
+### ============================================================
+### 0) DEBUG – sjekk DB-path og antall events
+### ============================================================
 GET {{baseUrl}}/debug/db
 Accept: application/json
 
 
-### ----------------------------------------
-### POST /events – student_registrert
-### (uten studentId – backend genererer)
-### ----------------------------------------
+### ============================================================
+### 1) POST /events – student_registrert (KORREKT)
+### - backend genererer studentId
+### - IKKE send studentId i request
+### ============================================================
 POST {{baseUrl}}/events
 Content-Type: application/json
 Accept: application/json
 
 {
-  "eventId": "00000000-0000-0000-0000-000000000003",
+  "eventId": "11111111-1111-1111-1111-111111111111",
   "occurredUtc": "2025-02-01T09:00:00Z",
   "recordedUtc": "2025-02-01T09:00:05Z",
   "type": "student_registrert",
   "name": "Michal Szczepanski",
   "birthdate": "1986-08-15",
-  "city": "Fall",
-  "payloadJson": "{}"
+  "city": "Fall"
 }
 
+### 👉 SKOPIER studentId FRA RESPONSEN 👆
 
-### ----------------------------------------
-### POST /events – kurs-event (MED studentId)
-### (kopier studentId fra forrige respons)
-### ----------------------------------------
+
+### ============================================================
+### 2) POST /events – student_registrert (FEIL)
+### - studentId er ikke lov her
+### - forventet: 400 + error
+### ============================================================
 POST {{baseUrl}}/events
 Content-Type: application/json
 Accept: application/json
 
 {
-  "eventId": "00000000-0000-0000-0000-000000000002",
+  "eventId": "22222222-2222-2222-2222-222222222222",
+  "occurredUtc": "2025-02-01T09:10:00Z",
+  "recordedUtc": "2025-02-01T09:10:05Z",
+  "type": "student_registrert",
+  "studentId": "THIS-SHOULD-NOT-BE-HERE",
+  "name": "Ola Hansen",
+  "birthdate": "2002-05-17",
+  "city": "Skien"
+}
+
+
+### ============================================================
+### 3) POST /events – kurs-event (KORREKT)
+### - Wklej studentId z testu #1
+### ============================================================
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "33333333-3333-3333-3333-333333333333",
   "occurredUtc": "2025-02-02T10:00:00Z",
   "recordedUtc": "2025-02-02T10:00:03Z",
   "type": "søkt",
   "studentId": "PUT-STUDENT-ID-HERE",
   "course": "StartIT",
   "year": 2025,
-  "semester": 1,
-  "payloadJson": "{\"motivasjon\":\"Jeg ønsker å lære mer om IT!\"}"
+  "semester": 1
 }
 
 
-### ----------------------------------------
-### POST /events – duplikat eventId
-### (skal ignoreres – idempotens)
-### ----------------------------------------
+### ============================================================
+### 4) POST /events – duplikat eventId (IDEMPOTENS)
+### - samme eventId som #3
+### - forventet: ok:false + duplicate_event
+### ============================================================
 POST {{baseUrl}}/events
 Content-Type: application/json
 Accept: application/json
 
 {
-  "eventId": "00000000-0000-0000-0000-000000000002",
+  "eventId": "33333333-3333-3333-3333-333333333333",
   "occurredUtc": "2025-02-02T10:00:00Z",
   "recordedUtc": "2025-02-02T10:00:03Z",
   "type": "søkt",
   "studentId": "PUT-STUDENT-ID-HERE",
   "course": "StartIT",
   "year": 2025,
-  "semester": 1,
-  "payloadJson": "{\"motivasjon\":\"Jeg ønsker å lære mer om IT!\"}"
+  "semester": 1
 }
 
 
-### ----------------------------------------
-### GET /events – rå event-logg (append-only)
-### ----------------------------------------
+### ============================================================
+### 5) POST /events – midweek-evolusjon (avvist + reason)
+### ============================================================
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "44444444-4444-4444-4444-444444444444",
+  "occurredUtc": "2025-02-03T12:00:00Z",
+  "recordedUtc": "2025-02-03T12:00:02Z",
+  "type": "avvist",
+  "studentId": "PUT-STUDENT-ID-HERE",
+  "course": "StartIT",
+  "year": 2025,
+  "semester": 1,
+  "reason": "ikke møtt opp"
+}
+
+
+### ============================================================
+### 6) GET /events – rå event-logg (append-only)
+### ============================================================
 GET {{baseUrl}}/events
 Accept: application/json
