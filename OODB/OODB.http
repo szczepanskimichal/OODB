@@ -1,112 +1,90 @@
 @baseUrl = http://localhost:5150
-# Alternativ hvis https:
-# @baseUrl = https://localhost:7096
+@studentId1 = 
+@studentId2 = 
 
-
-### ============================================================
-### 0) DEBUG – sjekk DB-path og antall events
-### ============================================================
+### DEBUG
 GET {{baseUrl}}/debug/db
 Accept: application/json
 
 
-### ============================================================
-### 1) POST /events – student_registrert (KORREKT)
-### - backend genererer studentId
-### - IKKE send studentId i request
-### ============================================================
+### 1) student_registrert (OK)
 POST {{baseUrl}}/events
 Content-Type: application/json
 Accept: application/json
 
 {
-  "eventId": "11111111-1111-1111-1111-111111111111",
+  "eventId": "20000000-0000-0000-0000-000000000001",
   "occurredUtc": "2025-02-01T09:00:00Z",
-  "recordedUtc": "2025-02-01T09:00:05Z",
+  "recordedUtc": "2025-02-01T09:00:01Z",
   "type": "student_registrert",
-  "name": "Michal Szczepanski",
-  "birthdate": "1986-08-15",
-  "city": "Fall"
-}
-
-### 👉 SKOPIER studentId FRA RESPONSEN 👆
-
-
-### ============================================================
-### 2) POST /events – student_registrert (FEIL)
-### - studentId er ikke lov her
-### - forventet: 400 + error
-### ============================================================
-POST {{baseUrl}}/events
-Content-Type: application/json
-Accept: application/json
-
-{
-  "eventId": "22222222-2222-2222-2222-222222222222",
-  "occurredUtc": "2025-02-01T09:10:00Z",
-  "recordedUtc": "2025-02-01T09:10:05Z",
-  "type": "student_registrert",
-  "studentId": "THIS-SHOULD-NOT-BE-HERE",
   "name": "Ola Hansen",
   "birthdate": "2002-05-17",
   "city": "Skien"
 }
 
 
-### ============================================================
-### 3) POST /events – kurs-event (KORREKT)
-### - Wklej studentId z testu #1
-### ============================================================
+### 2) kurs-event (OK) -> wklej studentId z #1
 POST {{baseUrl}}/events
 Content-Type: application/json
 Accept: application/json
 
 {
-  "eventId": "33333333-3333-3333-3333-333333333333",
+  "eventId": "20000000-0000-0000-0000-000000000002",
   "occurredUtc": "2025-02-02T10:00:00Z",
-  "recordedUtc": "2025-02-02T10:00:03Z",
+  "recordedUtc": "2025-02-02T10:00:01Z",
   "type": "søkt",
-  "studentId": "PUT-STUDENT-ID-HERE",
+  "studentId": "{{studentId1}}",
   "course": "StartIT",
   "year": 2025,
   "semester": 1
 }
 
 
-### ============================================================
-### 4) POST /events – duplikat eventId (IDEMPOTENS)
-### - samme eventId som #3
-### - forventet: ok:false + duplicate_event
-### ============================================================
+### 3) kolejne statusy (OK)
 POST {{baseUrl}}/events
 Content-Type: application/json
 Accept: application/json
 
 {
-  "eventId": "33333333-3333-3333-3333-333333333333",
-  "occurredUtc": "2025-02-02T10:00:00Z",
-  "recordedUtc": "2025-02-02T10:00:03Z",
-  "type": "søkt",
-  "studentId": "PUT-STUDENT-ID-HERE",
+  "eventId": "20000000-0000-0000-0000-000000000003",
+  "occurredUtc": "2025-02-03T10:00:00Z",
+  "recordedUtc": "2025-02-03T10:00:01Z",
+  "type": "godkjent",
+  "studentId": "{{studentId1}}",
   "course": "StartIT",
   "year": 2025,
   "semester": 1
 }
 
 
-### ============================================================
-### 5) POST /events – midweek-evolusjon (avvist + reason)
-### ============================================================
+### 4) duplikat (IDEMPOTENS)
 POST {{baseUrl}}/events
 Content-Type: application/json
 Accept: application/json
 
 {
-  "eventId": "44444444-4444-4444-4444-444444444444",
-  "occurredUtc": "2025-02-03T12:00:00Z",
-  "recordedUtc": "2025-02-03T12:00:02Z",
+  "eventId": "20000000-0000-0000-0000-000000000003",
+  "occurredUtc": "2025-02-03T10:00:00Z",
+  "recordedUtc": "2025-02-03T10:00:01Z",
+  "type": "godkjent",
+  "studentId": "{{studentId1}}",
+  "course": "StartIT",
+  "year": 2025,
+  "semester": 1
+}
+
+
+### 5) midweek (avvist + reason)
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000004",
+  "occurredUtc": "2025-02-04T10:00:00Z",
+  "recordedUtc": "2025-02-04T10:00:01Z",
   "type": "avvist",
-  "studentId": "PUT-STUDENT-ID-HERE",
+  "studentId": "{{studentId1}}",
   "course": "StartIT",
   "year": 2025,
   "semester": 1,
@@ -114,8 +92,184 @@ Accept: application/json
 }
 
 
-### ============================================================
-### 6) GET /events – rå event-logg (append-only)
-### ============================================================
+### GET raw events (debug)
 GET {{baseUrl}}/events
+Accept: application/json
+
+
+### ✅ Info o bazie
+GET {{baseUrl}}/debug/db
+Accept: application/json
+
+### ========== WIĘCEJ TESTÓW - RÓŻNE SCENARIUSZE ==========
+
+### 6) student 2 rejestracja
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000005",
+  "occurredUtc": "2025-02-01T10:00:00Z",
+  "recordedUtc": "2025-02-01T10:00:01Z",
+  "type": "student_registrert",
+  "name": "Johan Eriksen",
+  "birthdate": "2001-03-21",
+  "city": "Oslo"
+}
+
+
+### 7) student 2 aplikuje do innego kursu
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000006",
+  "occurredUtc": "2025-02-02T11:00:00Z",
+  "recordedUtc": "2025-02-02T11:00:01Z",
+  "type": "søkt",
+  "studentId": "{{studentId2}}",
+  "course": "Frontend",
+  "year": 2025,
+  "semester": 1
+}
+
+
+### 8) student 2 accepted Frontend
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000007",
+  "occurredUtc": "2025-02-03T11:00:00Z",
+  "recordedUtc": "2025-02-03T11:00:01Z",
+  "type": "godkjent",
+  "studentId": "{{studentId2}}",
+  "course": "Frontend",
+  "year": 2025,
+  "semester": 1
+}
+
+
+### 9) student 2 started Frontend
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000008",
+  "occurredUtc": "2025-02-10T09:00:00Z",
+  "recordedUtc": "2025-02-10T09:00:01Z",
+  "type": "startet",
+  "studentId": "{{studentId2}}",
+  "course": "Frontend",
+  "year": 2025,
+  "semester": 1
+}
+
+
+### 10) student 2 FINISHED Frontend (fullført!)
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000009",
+  "occurredUtc": "2025-12-15T14:00:00Z",
+  "recordedUtc": "2025-12-15T14:00:01Z",
+  "type": "fullført",
+  "studentId": "{{studentId2}}",
+  "course": "Frontend",
+  "year": 2025,
+  "semester": 1
+}
+
+
+### 11) student 1 também finished (fullført!)
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000010",
+  "occurredUtc": "2025-12-20T15:00:00Z",
+  "recordedUtc": "2025-12-20T15:00:01Z",
+  "type": "fullført",
+  "studentId": "{{studentId1}}",
+  "course": "StartIT",
+  "year": 2025,
+  "semester": 1
+}
+
+
+### 12) inny rok: student 1 w 2026
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000011",
+  "occurredUtc": "2026-01-05T10:00:00Z",
+  "recordedUtc": "2026-01-05T10:00:01Z",
+  "type": "søkt",
+  "studentId": "{{studentId1}}",
+  "course": "Backend",
+  "year": 2026,
+  "semester": 1
+}
+
+
+### 13) student 1 finished Backend 2026
+POST {{baseUrl}}/events
+Content-Type: application/json
+Accept: application/json
+
+{
+  "eventId": "20000000-0000-0000-0000-000000000012",
+  "occurredUtc": "2026-06-20T16:00:00Z",
+  "recordedUtc": "2026-06-20T16:00:01Z",
+  "type": "fullført",
+  "studentId": "{{studentId1}}",
+  "course": "Backend",
+  "year": 2026,
+  "semester": 1
+}
+
+
+### ========== SPRAWDZANIE WYNIKÓW ==========
+
+### ✅ Sprawdź wszystkie eventy
+GET {{baseUrl}}/events
+Accept: application/json
+
+
+### ✅ Sprawdź status wszystkich studentów
+GET {{baseUrl}}/status
+Accept: application/json
+
+
+### ✅ Sprawdź stats PER ROK
+GET {{baseUrl}}/stats
+Accept: application/json
+
+
+### ✅ GŁÓWNE PYTANIE: Ile studentów ukończyło? (razem ze wszystkie lata)
+GET {{baseUrl}}/stats/total
+Accept: application/json
+
+
+### ✅ Info o bazie
+GET {{baseUrl}}/debug/db
+Accept: application/json
+
+
+### GET stats
+GET {{baseUrl}}/stats
+Accept: application/json
+
+
+### Batch rebuild (reparer derived state)
+POST {{baseUrl}}/batch/rebuild
 Accept: application/json
